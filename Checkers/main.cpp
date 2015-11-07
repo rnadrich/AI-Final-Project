@@ -4,7 +4,7 @@
 using namespace std;
 /*TODO:
 *King and movement
-*min max with alpha beta (only selects first move possible)
+*min max with alpha beta (does two moves when capturing)
 */
 
 const int BOARD_SIZE = 64;
@@ -14,13 +14,12 @@ int blackCount;
 const int Black_Piece = 1;
 const int Red_Piece = 2;
 const int Empty = 0;
-const int MAX_INFINITY = 1;
-const int DRAW = 0;
-const int MIN_INFINITY = -1;
-const int MAX_CHILD_NODES = 9;
+const int MAX_INFINITY = 12;
+const int MIN_INFINITY = -12;
+const int MAX_DEPTH = 4;
 int computer_move[BOARD_SIZE];
-short evaluateComputerMove(int , int , int , int , int[]);
-short evaluateHumanMove(int , int , int , int , int[]);
+short evaluateComputerMove(int , int , int , int , int[], int,int );
+short evaluateHumanMove(int , int , int , int , int[],int ,int );
 
 //displays current state of board
 void emitboard()
@@ -179,7 +178,79 @@ bool canCapture(int player, int pieceSelected, int movePosition)
 	}
 	return false;
 }
-
+bool canCapture(int player, int pieceSelected, int movePosition, int curBoard[])
+{
+	if (movePosition < 0 || movePosition>BOARD_SIZE || pieceSelected < 0 || pieceSelected>BOARD_SIZE)return false; //moves off board
+	if (pieceSelected % 8 == 0 && movePosition % 8 == 7)return false; //checks that the piece wont go from one side to the other
+	if (pieceSelected % 8 == 7 && movePosition % 8 == 0)return false;//checks that the piece wont go from one side to the other
+	if (curBoard[movePosition] != Empty)return false; //checks to see if that location is empty
+	if (player == Red_Piece)
+	{
+		if (pieceSelected % 8 == 0)
+		{
+			if (pieceSelected + 18 == movePosition && curBoard[pieceSelected + 9] == Black_Piece)return true;
+		}
+		if (pieceSelected % 8 == 7)
+		{
+			if (pieceSelected + 14 == movePosition && curBoard[pieceSelected + 7] == Black_Piece)return true;
+		}
+		if ((pieceSelected + 14 == movePosition && curBoard[pieceSelected + 7] == Black_Piece)
+			|| (pieceSelected + 18 == movePosition && curBoard[pieceSelected + 9] == Black_Piece))return true;
+		if (pieceSelected + 14 > movePosition || pieceSelected + 18 > movePosition)
+		{
+			return (canCapture(player, pieceSelected + 14, movePosition,curBoard)
+				|| canCapture(player, pieceSelected + 18, movePosition,curBoard));
+		}
+	}
+	if (player == Black_Piece)
+	{
+		if (pieceSelected % 8 == 0)
+		{
+			if (pieceSelected - 18 == movePosition && curBoard[pieceSelected - 9] == Red_Piece)return true;
+		}
+		if (pieceSelected % 8 == 7)
+		{
+			if (pieceSelected - 14 == movePosition && curBoard[pieceSelected - 7] == Red_Piece)return true;
+		}
+		if ((pieceSelected - 14 == movePosition && curBoard[pieceSelected - 7] == Red_Piece)
+			|| (pieceSelected - 18 == movePosition && curBoard[pieceSelected - 9] == Red_Piece))return true;
+		if (pieceSelected - 14 > movePosition || pieceSelected - 18 > movePosition)		{
+			return (canCapture(player, pieceSelected - 14, movePosition,curBoard)
+				|| canCapture(player, pieceSelected - 18, movePosition,curBoard));
+		}
+	}
+	return false;
+}
+bool canCapture(int player, int pieceSelected, int curBoard[])
+{
+	if (player == Black_Piece)
+	{
+		if (pieceSelected % 8 == 0)
+		{
+			return (curBoard[pieceSelected - 9] == Red_Piece && curBoard[pieceSelected - 18] == Empty);
+		}
+		if (pieceSelected % 8 == 7)
+		{
+			return(curBoard[pieceSelected - 7] == Red_Piece && curBoard[pieceSelected - 14] == Empty);
+		}
+		if ((curBoard[pieceSelected - 7] == Red_Piece && curBoard[pieceSelected - 14] == Empty) ||
+			(curBoard[pieceSelected - 9] == Red_Piece && curBoard[pieceSelected - 18] == Empty)) return true;
+	}
+	if (player == Red_Piece)
+	{
+		if (pieceSelected % 8 == 0)
+		{
+			return (curBoard[pieceSelected + 9] == Black_Piece && curBoard[pieceSelected + 18] == Empty);
+		}
+		if (pieceSelected % 8 == 7)
+		{
+			return(curBoard[pieceSelected + 7] == Black_Piece && curBoard[pieceSelected + 14] == Empty);
+		}
+		if ((curBoard[pieceSelected + 7] == Black_Piece && curBoard[pieceSelected + 14] == Empty) ||
+			(curBoard[pieceSelected + 9] == Black_Piece && curBoard[pieceSelected + 18] == Empty)) return true;
+	}
+	return false;
+}
 //checks to see if the move is valid
 bool validMove(int player, int pieceSelected, int movePosition)
 {
@@ -188,6 +259,46 @@ bool validMove(int player, int pieceSelected, int movePosition)
 	if (pieceSelected % 8 == 0 && movePosition % 8 == 7)return false; //checks that the piece wont go from one side to the other
 	if (pieceSelected % 8 == 7 && movePosition % 8 == 0)return false;//checks that the piece wont go from one side to the other
 	if (board[movePosition] != Empty)return false; //checks to see if that location is empty
+	if (player == Red_Piece)
+	{
+		if (pieceSelected % 8 == 0)
+		{
+			if (pieceSelected + 9 == movePosition)return true;
+		}
+		if (pieceSelected % 8 == 7)
+		{
+			if (pieceSelected + 7 == movePosition)return true;
+		}
+		if (pieceSelected + 7 == movePosition || pieceSelected + 9 == movePosition)return true;
+		if (pieceSelected + 7 < movePosition || pieceSelected + 9 < movePosition)
+		{
+			return canCapture(player, pieceSelected, movePosition);
+		}
+	}
+	if (player = Black_Piece)
+	{
+		if (pieceSelected % 8 == 0)
+		{
+			if (pieceSelected - 9 == movePosition)return true;
+		}
+		if (pieceSelected % 8 == 7)
+		{
+			if (pieceSelected - 7 == movePosition)return true;
+		}
+		if (pieceSelected - 7 == movePosition || pieceSelected - 9 == movePosition)return true;
+		if (pieceSelected - 7 > movePosition || pieceSelected - 9 > movePosition)return canCapture(player, pieceSelected, movePosition);
+
+	}
+
+	return false;
+}
+bool validMove(int player, int pieceSelected, int movePosition, int curBoard[])
+{
+
+	if (movePosition < 0 || movePosition>BOARD_SIZE)return false; //moves off board
+	if (pieceSelected % 8 == 0 && movePosition % 8 == 7)return false; //checks that the piece wont go from one side to the other
+	if (pieceSelected % 8 == 7 && movePosition % 8 == 0)return false;//checks that the piece wont go from one side to the other
+	if (curBoard[movePosition] != Empty)return false; //checks to see if that location is empty
 	if (player == Red_Piece)
 	{
 		if (pieceSelected % 8 == 0)
@@ -294,6 +405,78 @@ void capture(int player, int pieceSelected, int movePosition)
 		}
 	}
 }
+void capture(int player, int pieceSelected, int movePosition, int curBoard[], int &black_Count, int &red_Count)
+{
+	if (pieceSelected == movePosition ||pieceSelected<0||pieceSelected>BOARD_SIZE)return;
+	if (player == Red_Piece)
+	{
+		if (pieceSelected % 8 == 0)
+		{
+			if (pieceSelected + 18 == movePosition && curBoard[pieceSelected + 9] == Black_Piece)
+			{
+				curBoard[pieceSelected + 9] = Empty;
+				black_Count--;
+			}
+		}
+		if (pieceSelected % 8 == 7)
+		{
+			if (pieceSelected + 14 == movePosition && curBoard[pieceSelected + 7] == Black_Piece)
+			{
+				curBoard[pieceSelected + 7] = Empty;
+				black_Count--;
+			}
+		}
+		if (pieceSelected + 14 == movePosition && curBoard[pieceSelected + 7] == Black_Piece)
+		{
+			curBoard[pieceSelected + 7] = Empty;
+			black_Count--;
+		}
+		if (pieceSelected + 18 == movePosition && curBoard[pieceSelected + 9] == Black_Piece)
+		{
+			curBoard[pieceSelected + 9] = Empty;
+			black_Count--;
+		}
+		if (pieceSelected + 14 > movePosition || pieceSelected + 18 > movePosition)
+		{
+			capture(player, pieceSelected + 14, movePosition,curBoard,black_Count,red_Count);
+			capture(player, pieceSelected + 18, movePosition,curBoard,black_Count,red_Count);
+		}
+	}
+	if (player == Black_Piece)
+	{
+		if (pieceSelected % 8 == 0)
+		{
+			if (pieceSelected - 18 == movePosition && curBoard[pieceSelected - 9] == Red_Piece)
+			{
+				curBoard[pieceSelected - 9] = Empty;
+				red_Count--;
+			}
+		}
+		if (pieceSelected % 8 == 7)
+		{
+			if (pieceSelected - 14 == movePosition && curBoard[pieceSelected - 7] == Red_Piece)
+			{
+				red_Count--;
+				curBoard[pieceSelected - 7] = Empty;
+			}
+		}
+		if (pieceSelected - 14 == movePosition && curBoard[pieceSelected - 7] == Red_Piece)
+		{
+			curBoard[pieceSelected - 7] = Empty;
+			red_Count--;
+		}
+		if (pieceSelected - 18 == movePosition && curBoard[pieceSelected - 9] == Red_Piece)
+		{
+			red_Count--;
+			curBoard[pieceSelected - 9] = Empty;
+		}
+		if (pieceSelected - 14 > movePosition || pieceSelected - 18 > movePosition)
+		{
+			capture(player, pieceSelected - 14, movePosition,curBoard,black_Count,red_Count);
+			capture(player, pieceSelected - 18, movePosition,curBoard,black_Count,red_Count);
+		}
+	}
+}
 
 //selects the location the player wishes the current selected piece to move to 
 int selectMove(int player, int pieceSelected)
@@ -340,7 +523,7 @@ void copyBoard(int src[], int dest[])
 
 void getComputerMove(int player)
 {
-	evaluateComputerMove(player, 0, MIN_INFINITY - 1, MAX_INFINITY + 1, board);
+	evaluateComputerMove(player, MAX_DEPTH, MIN_INFINITY - 1, MAX_INFINITY + 1, board,blackCount,redCount);
 	copyBoard(computer_move, board);
 }
 //gets players turn
@@ -363,42 +546,12 @@ void Turn(int player)
 //clears the entire board
 void clearBoard()
 {
-	//for each (int i in board)
-	//{
-	//	i = Empty;
-	//}
-}
-//computer checks to see if it can capture a piece from specifiec location
-bool canCapture(int player, int pieceSelected, int curBoard[])
-{
-	if (player == Black_Piece)
+	for each (int i in board)
 	{
-		if (pieceSelected % 8 == 0)
-		{
-			return (curBoard[pieceSelected - 9] == Red_Piece && curBoard[pieceSelected - 18] == Empty);
-		}
-		if (pieceSelected % 8 == 7)
-		{
-			return(curBoard[pieceSelected - 7] == Red_Piece && curBoard[pieceSelected - 14] == Empty);
-		}
-		if ((curBoard[pieceSelected - 7] == Red_Piece && curBoard[pieceSelected - 14] == Empty) ||
-			(curBoard[pieceSelected - 9] == Red_Piece && curBoard[pieceSelected - 18] == Empty)) return true;
+		i = Empty;
 	}
-	if (player == Red_Piece)
-	{
-		if (pieceSelected % 8 == 0)
-		{
-			return (curBoard[pieceSelected + 9] == Black_Piece && curBoard[pieceSelected + 18] == Empty);
-		}
-		if (pieceSelected % 8 == 7)
-		{
-			return(curBoard[pieceSelected + 7] == Black_Piece && curBoard[pieceSelected + 14] == Empty);
-		}
-		if ((curBoard[pieceSelected + 7] == Black_Piece && curBoard[pieceSelected + 14] == Empty) ||
-			(curBoard[pieceSelected + 9] == Black_Piece && curBoard[pieceSelected + 18] == Empty)) return true;
-	}
-	return false;
 }
+
 //checks to see if there are any moves avaliabe at specifiec location
 bool ifcanMove(int player, int pieceSelected, int curBoard[])
 {
@@ -550,8 +703,11 @@ vector<pair<int, int>> findPossibleMoves(int player, int curBoard[])
 				vector<int> mlocation=findMoveLocation(player, i, curBoard);
 				for each (int j in mlocation)
 				{
-					pair<int, int>pMove = { i, j };
-					moves.push_back(pMove);
+					if (validMove(player, i, j, curBoard))
+					{
+						pair<int, int>pMove = { i, j };
+						moves.push_back(pMove);
+					}
 				}
 			}
 		}
@@ -560,30 +716,29 @@ vector<pair<int, int>> findPossibleMoves(int player, int curBoard[])
 }
 
 //evaluates human move
-short evaluateHumanMove(int player, int depth, int alpha, int beta, int curboard[])
+short evaluateHumanMove(int player, int depth, int alpha, int beta, int curboard[],int black_Count, int red_Count)
 {
 	int  value;
 	int new_board[BOARD_SIZE];
 	short min = MAX_INFINITY + 1;
-
-
-	//boards_checked++;
+	if (depth == 0)return (red_Count - black_Count);
+	copyBoard(curboard, new_board);
 
 	/* The computer (max) just made a move, so we evaluate that move here */
-	if (player == Red_Piece && checkIfWon(Black_Piece))  return MAX_INFINITY;
+	if (checkIfWon(Red_Piece))  return MAX_INFINITY;
 	vector<pair<int, int>> possibleMoves = findPossibleMoves(player, new_board);
 	for each (pair<int, int> pMove in possibleMoves)
 	{
+		if (canCapture(player, pMove.first, pMove.second, curboard))capture(player, pMove.first, pMove.second, new_board, black_Count, red_Count);
 		makeMove(pMove.first, pMove.second, new_board);
 		int nextPlayer;
 		if (player == Black_Piece)nextPlayer = Red_Piece;
 		else nextPlayer = Black_Piece;
-		value = evaluateComputerMove(nextPlayer, depth + 1, alpha, beta, new_board);
+		value = evaluateComputerMove(nextPlayer, depth - 1, alpha, beta, new_board,black_Count,red_Count);
 
 		if (value < min)
 		{
 			min = value;
-			//	if (depth == 0) computer_move = i;
 		}
 
 		if (value < beta) beta = value;
@@ -595,29 +750,31 @@ short evaluateHumanMove(int player, int depth, int alpha, int beta, int curboard
 }
 
 //evaluate computer move
-short evaluateComputerMove(int player, int depth, int alpha, int beta, int curboard[])
+short evaluateComputerMove(int player, int depth, int alpha, int beta, int curboard[], int black_Count, int red_Count)
 {
 	int value;
 	int new_board[BOARD_SIZE];
 	int max = MIN_INFINITY - 1;
+	if (depth == 0)return (red_Count - black_Count);
 	copyBoard(curboard, new_board);
 	//boards_checked++;
 
 	/* The human (min) just made a move, so we evaluate that move here */
-	if (player == Black_Piece && checkIfWon(Red_Piece)) return MIN_INFINITY;
+	if (checkIfWon(Black_Piece)) return MIN_INFINITY;
 	vector<pair<int, int>> possibleMoves = findPossibleMoves(player, new_board);
 	for each (pair<int, int> pMove in possibleMoves)
 	{
+		if (canCapture(player, pMove.first, pMove.second, curboard))capture(player, pMove.first, pMove.second, new_board, black_Count, red_Count);
 		makeMove(pMove.first, pMove.second, new_board);
 		int nextPlayer;
 		if (player == Black_Piece)nextPlayer = Red_Piece;
 		else nextPlayer = Black_Piece;
-		value = evaluateHumanMove(nextPlayer, depth + 1, alpha, beta, new_board);
+		value = evaluateHumanMove(nextPlayer, depth - 1, alpha, beta, new_board,black_Count,red_Count);
 
 		if (value > max)
 		{
 			max = value;
-			if (depth == 0) copyBoard(new_board, computer_move);
+			if (depth == MAX_DEPTH) copyBoard(new_board, computer_move);
 		}
 
 		if (value > alpha) alpha = value;
