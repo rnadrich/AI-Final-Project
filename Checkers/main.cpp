@@ -134,7 +134,7 @@ int selectPiece(int player)
 	return selection;
 }
 
-//checks to see if the piece is capturing
+//checks to see if the piece is/can capture another piece
 bool canCapture(int player, int pieceSelected, int movePosition)
 {
 	if (movePosition < 0 || movePosition>BOARD_SIZE || pieceSelected < 0 || pieceSelected>BOARD_SIZE)return false; //moves off board
@@ -521,26 +521,29 @@ void copyBoard(int src[], int dest[])
 	}
 }
 
+//gets computers move
 void getComputerMove(int player)
 {
 	evaluateComputerMove(player, MAX_DEPTH, MIN_INFINITY - 1, MAX_INFINITY + 1, board,blackCount,redCount);
 	copyBoard(computer_move, board);
 }
+//gets human Move
+void getHumanMove(int player)
+{
+	int move = -1;
+	int selection;
+	while (move == -1)
+	{
+		selection = selectPiece(player);
+		move = selectMove(player, selection);
+	}
+	makeMove(selection, move);
+}
 //gets players turn
 void Turn(int player)
 {
 	if (player == Red_Piece)getComputerMove(player);
-	else
-	{
-		int move = -1;
-		int selection;
-		while (move == -1)
-		{
-			selection = selectPiece(player);
-			move = selectMove(player, selection);
-		}
-		makeMove(selection, move);
-	}
+	else getHumanMove(player);
 }
 
 //clears the entire board
@@ -723,7 +726,6 @@ short evaluateHumanMove(int player, int depth, int alpha, int beta, int curboard
 	short min = MAX_INFINITY + 1;
 	if (depth == 0)return (red_Count - black_Count);
 	copyBoard(curboard, new_board);
-
 	/* The computer (max) just made a move, so we evaluate that move here */
 	if (checkIfWon(Red_Piece))  return MAX_INFINITY;
 	vector<pair<int, int>> possibleMoves = findPossibleMoves(player, new_board);
@@ -745,6 +747,7 @@ short evaluateHumanMove(int player, int depth, int alpha, int beta, int curboard
 
 		/* Prune this subtree by not checking any further successors */
 		if (alpha >= beta) return beta;
+		copyBoard(curboard, new_board);
 	}
 	return min;
 }
@@ -764,6 +767,7 @@ short evaluateComputerMove(int player, int depth, int alpha, int beta, int curbo
 	vector<pair<int, int>> possibleMoves = findPossibleMoves(player, new_board);
 	for each (pair<int, int> pMove in possibleMoves)
 	{
+
 		if (canCapture(player, pMove.first, pMove.second, curboard))capture(player, pMove.first, pMove.second, new_board, black_Count, red_Count);
 		makeMove(pMove.first, pMove.second, new_board);
 		int nextPlayer;
@@ -781,6 +785,7 @@ short evaluateComputerMove(int player, int depth, int alpha, int beta, int curbo
 
 		/* Prune this subtree by not checking any further successors */
 		if (alpha >= beta) return alpha;
+		copyBoard(curboard, new_board);
 	}
 	return max;
 }
