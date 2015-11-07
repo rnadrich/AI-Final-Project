@@ -4,7 +4,6 @@
 using namespace std;
 /*TODO:
 *King and movement
-*min max with alpha beta (does two moves when capturing)
 */
 
 const int BOARD_SIZE = 64;
